@@ -59,10 +59,11 @@ class WiggleReader:
                     
 
 class WiggleWriter:
-    def __init__(self, chrom, span):
+    def __init__(self, chrom, span, filename):
         self.span = span
         self.chrom = chrom
         self.mode = MODE_VARIABLE
+        self.outfile = open(filename, 'w')
         
     
     def write_header(self):
@@ -74,17 +75,16 @@ class WiggleWriter:
         
 
     def write_from_iterator(self, filename, iterator):
-        with open(filename, 'w') as outfile:
-            self.write_header()
-            for locus in iterator:
-                if len(locus == 4):
-                    chrom, start, stop, score = locus
-                    span = stop - start
-                else:
-                    chrom, start, score = locus
-                    span = 1
-                if not span == self.span:
-                    raise ValueError('Span mismatch: {}, {}'.format(span, self.span))
-                if not chrom == self.chrom:
-                    raise ValueError('Chrom mismatch: {}, {}'.format(chrom, self.chrom))
-                self.write_score(start, score)
+        self.write_header()
+        for locus in iterator:
+            if len(locus == 4):
+                chrom, start, stop, score = locus
+                span = stop - start
+            else:
+                chrom, start, score = locus
+                span = 1
+            if not span == self.span:
+                raise ValueError('Span mismatch: {}, {}'.format(span, self.span))
+            if not chrom == self.chrom:
+                raise ValueError('Chrom mismatch: {}, {}'.format(chrom, self.chrom))
+            self.write_score(start, score)
