@@ -1,0 +1,48 @@
+#!/usr/bin/env python
+"""Transform a BedGraph with a single track into a wiggle file.
+"""
+
+import argparse
+
+from ribomethseq.wiggle import WiggleWriter
+
+
+def parse_args():
+    parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument('--input-file', help='Input track')
+    parser.add_argument('--output-file', help='Output wig file')
+    
+    args = parser.parse_args()
+    if not args.input_file.endswith('bed'):
+        raise ValueError('Input file must be a BED file, instead read {}'.format(args.input_file))
+    if not args.output_file.endswith('wig'):
+        raise ValueError('Output file must be a wiggle file, instead read {}'.format(args.output_file))
+    return args
+    
+    
+def main(args):
+    with open(args.input_file, 'r') as infile:
+        header = infile.readline()
+        if not header.startswith('track'):
+            raise ValueError('Invalid header line:\n{}'.format(header))
+        data = infile.readlines()
+        chrom, first_start, _, _ = data[0].split()
+        _, second_start, _, _ = data[1].split()
+        if int(second_start) < int(first_start):
+            data = data[::-1]
+        writer = WiggleWriter(chrom, 1, args.output_file)
+        writer.write_header()
+        for line in data:
+            chrom, start, stop, score = line.split()
+            start, stop, score = int(start), int(stop), float(score)
+            if not stop - start == 1:
+                raise ValueError('Expected span=1, got {}'.format(stop - start))
+            if not chrom == writer.chrom:
+                raise ValueError('Unexpected chromosome')
+            writer.write_score(start + 1, score)
+        writer.outfile.close()
+    infile.close()
+
+    
+if __name__ == '__main__':
+    main(parse_args())
