@@ -1,0 +1,44 @@
+#!/usr/bin/env python
+"""Split out BedGraph files with multiple tracks into multiple files, each with a single track.
+"""
+
+import argparse
+import os
+
+
+def parse_args():
+    parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument('--input-file', help='Input tracks to be split')
+    parser.add_argument('--output-file', help='Destination file for output tracks')
+    
+    args = parser.parse_args()
+    if not args.input_file.endswith('bed'):
+        raise ValueError('Input file must be a BED file, instead read {}'.format(args.input_file))
+    if not args.output_file.endswith('bed'):
+        raise ValueError('Output file must be a BED file, instead read {}'.format(args.output_file))
+    return args
+    
+    
+def gen_iterative_filename(count, filename):
+    head, extension = os.path.splitext(filename)
+    return '{head}.{count}{extension}'.format(**locals())
+    
+    
+def main(args):
+    count = 0
+    outfile = None
+    
+    with open(args.input_file, 'r') as infile:
+        for line in infile:
+            if line.startswith('track'):
+                if outfile is not None:
+                    outfile.close()
+                    count += 1
+                outfile = open(gen_iterative_filename(count, args.output_file), 'w')
+            outfile.write(line)
+    infile.close()
+    outfile.close()
+    
+    
+if __name__ == '__main__':
+    main(parse_args())
