@@ -8,9 +8,9 @@ import os
 
 def parse_args():
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument('--input-file', help='Input tracks to be split')
-    parser.add_argument('--output-file', help='Destination file for output tracks')
-    
+    parser.add_argument('--input-file', required=True, help='Input tracks to be split')
+    parser.add_argument('--output-file', required=True, help='Destination file for output tracks')
+ 
     args = parser.parse_args()
     if not args.input_file.endswith('bed'):
         raise ValueError('Input file must be a BED file, instead read {}'.format(args.input_file))
