@@ -51,9 +51,9 @@ class WiggleReader:
                     score = float(score)
                     if iterate_by_position:
                         for position in range(start, start + self.current_span):
-                            yield chrom, position, score
+                            yield self.current_chrom, position, score
                     else:
-                        yield chrom, start, start + self.current_span, score
+                        yield self.current_chrom, start, start + self.current_span, score
                 else:
                     raise ValueError('Unexpected line: {}'.format(line))
                     
