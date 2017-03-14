@@ -28,7 +28,7 @@ class WiggleReader:
         return dict(field.split('=') for field in line.split()[1:])    
 
     
-    def iterate_wiggle(self, iterate_by_position=False):
+    def iterate_wiggle(self, iterate_by_position=True):
         with open(self.filename, 'r') as infile:
             for line in infile:
                 if line.isspace() or line.startswith('#'):
