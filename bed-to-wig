@@ -9,8 +9,9 @@ from ribomethseq.wiggle import WiggleWriter
 
 def parse_args():
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument('--input-file', help='Input track')
-    parser.add_argument('--output-file', help='Output wig file')
+    parser.add_argument('--input-file', required=True, help='Input track')
+    parser.add_argument('--output-file', required=True, help='Output wig file')
+    parser.add_argument('--round', action='store_true')
     
     args = parser.parse_args()
     if not args.input_file.endswith('bed'):
@@ -39,7 +40,7 @@ def main(args):
                 raise ValueError('Expected span=1, got {}'.format(stop - start))
             if not chrom == writer.chrom:
                 raise ValueError('Unexpected chromosome')
-            writer.write_score(start + 1, score)
+            writer.write_score(start + 1, score, round=args.round)
         writer.outfile.close()
     infile.close()
 
