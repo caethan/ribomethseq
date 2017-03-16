@@ -70,8 +70,11 @@ class WiggleWriter:
         self.outfile.write('variableStep chrom={chrom} span={span}\n'.format(chrom=self.chrom, span=self.span))
 
     
-    def write_score(self, position, score):
-        self.outfile.write('{position}\t{score}\n'.format(**locals()))
+    def write_score(self, position, score, round=False):
+        if round:
+            self.outfile.write('{position}\t{score:.4f}\n'.format(**locals()))
+        else:
+            self.outfile.write('{position}\t{score}\n'.format(**locals()))
         
 
     def write_from_iterator(self, filename, iterator):
