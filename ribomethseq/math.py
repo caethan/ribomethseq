@@ -21,9 +21,7 @@ def split_flanks(end_counts):
     left_flank = end_counts[:delta]
     center = end_counts[delta]
     right_flank = end_counts[-delta:]
-    return (left_flank, 
-            center, 
-            right_flank)
+    return (left_flank, center, right_flank)
 
 
 def calculate_score_A(end_counts):
@@ -34,13 +32,29 @@ def calculate_score_A(end_counts):
     return max(1 - numerator / denomenator, 0.0)
 
 
+def calculate_score_B(end_counts):
+    weights = [1 - 0.1 * i for i in range(FLANK_WIDTH)]
+    left_flank, center, right_flank = split_flanks(end_counts)
+    left_weighted_sum = sum([weight * count for weight, count in zip(weights[::-1], left_flank)]) / sum(weights)
+    right_weighted_sum = sum([weight * count for weight, count in zip(weights, right_flank)]) / sum(weights)
+    return abs(center - left_weighted_sum / 2 - right_weighted_sum / 2) / (center + 1)
+    
+    
+def calculate_score_C(end_counts):
+    weights = [1 - 0.1 * i for i in range(FLANK_WIDTH)]
+    left_flank, center, right_flank = split_flanks(end_counts)
+    left_weighted_sum = sum([weight * count for weight, count in zip(weights[::-1], left_flank)]) / sum(weights)
+    right_weighted_sum = sum([weight * count for weight, count in zip(weights, right_flank)]) / sum(weights)
+    return max(0.0, 1 - (2 * center) / (left_weighted_sum + right_weighted_sum))
+
+
 def count_wig_to_score_wig(count_file, score_file, score_func):
     writer = None
     for chrom, position, score in iterate_scores_from_wiggle(count_file, score_func):
         if writer is None:
             writer = WiggleWriter(chrom, 1, score_file)
             writer.write_header()
-        writer.write_score(position + 1, score) # Switch back to 1-based wiggle filename
+        writer.write_score(position + 1, score, round=True) # Switch back to 1-based wiggle filename
     writer.outfile.close()
 
     
