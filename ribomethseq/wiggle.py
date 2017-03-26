@@ -80,7 +80,7 @@ class WiggleWriter:
     def write_from_iterator(self, iterator):
         self.write_header()
         for locus in iterator:
-            if len(locus == 4):
+            if len(locus) == 4:
                 chrom, start, stop, score = locus
                 span = stop - start
             else:

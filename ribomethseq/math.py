@@ -48,12 +48,12 @@ def calculate_score_C(end_counts):
     return max(0.0, 1 - (2 * center) / (left_weighted_sum + right_weighted_sum))
 
 
-def count_wig_to_score_wig(count_file, score_file, score_func):
-    writer = None
-    for chrom, position, score in iterate_scores_from_wiggle(count_file, score_func):
-        if writer is None:
-            writer = WiggleWriter(chrom, 1, score_file)
-            writer.write_header()
+def count_wig_to_score_wig(count_file, score_file, chrom, score_func):
+    writer = WiggleWriter(chrom, 1, score_file)
+    writer.write_header()
+    for new_chrom, position, score in iterate_scores_from_wiggle(count_file, score_func):
+        if not new_chrom == chrom:
+            raise ValueError
         writer.write_score(position + 1, score, round=True) # Switch back to 1-based wiggle filename
     writer.outfile.close()
 

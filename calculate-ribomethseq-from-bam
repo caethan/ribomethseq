@@ -1,0 +1,105 @@
+#!/usr/bin/env python
+"""Script that transforms a BAM file with paired-end aligned sequences into:
+- Files of 5', 3', and total end counts
+- Files of scores A, B, and C as described in Birkedal et al.
+"""
+
+import argparse
+import os
+import logging
+from ribomethseq.math import (count_wig_to_score_wig, calculate_score_A, 
+                              calculate_score_B, calculate_score_C)
+from ribomethseq.endcounts import get_endcount_iterators, normalize_chrom
+from ribomethseq.wiggle import WiggleWriter, WiggleReader
+
+
+logging.basicConfig(format='%(asctime)s - %(levelname)s - %(message)s', datefmt='%m/%d/%Y %I:%M:%S %p', level=logging.INFO)
+
+
+def parse_args():
+    parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument('--input-bam-file', required=True, help='Input BAM file of aligned paired reads')
+    parser.add_argument('--output-dir', required=True, help='Output directory for output files')
+    
+    args = parser.parse_args()
+    if not args.input_bam_file.endswith('bam'):
+        raise ValueError('Input file must be a BAM file, instead read {}'.format(args.input_bam_file))
+    if not os.path.exists(args.input_bam_file):
+        raise ValueError('Input file {} not found'.format(args.input_bam_file))
+    return args
+    
+    
+def iterate_concurrently(wiggle_readers):
+    while True:
+        current_chrom = None
+        current_position = None
+        scores = []
+        try:
+            for reader in wiggle_readers:
+                chrom, position, score = next(reader)
+                if current_chrom is None:
+                    current_chrom = chrom
+                if current_position is None:
+                    current_position = position
+                assert current_chrom == chrom
+                assert current_position == position
+                scores.append(score)
+        except StopIteration:
+            raise StopIteration
+        yield current_chrom, current_position, scores
+    
+
+def main(args):
+    # First go from the BAM file to a separate end count file per chromosome
+    logging.info('Calculating end counts from input file {}'.format(args.input_bam_file))
+    iterators = get_endcount_iterators(args.input_bam_file)
+    chroms = sorted(iterators.keys())
+    for chrom in chroms:
+        norm_chrom = normalize_chrom(chrom)
+        logging.info('Writing end count files for chr {chrom}'.format(**locals()))
+        for key in ['5-prime', '3-prime', 'total']:
+            output_file = os.path.join(args.output_dir, 'chr_{norm_chrom}_{key}_endcounts.wig'.format(**locals()))
+            writer = WiggleWriter(chrom, 1, output_file)
+            writer.write_from_iterator(iterators[chrom][key])
+            
+    # Go from the total end count file for each chromosome to score A, B, and C files
+    logging.info('Calculating scores from end counts')
+    for chrom in chroms:
+        norm_chrom = normalize_chrom(chrom)
+        logging.info('Calculating for chr {chrom}'.format(**locals()))
+        count_file = os.path.join(args.output_dir, 'chr_{norm_chrom}_total_endcounts.wig'.format(**locals()))
+        count_wig_to_score_wig(count_file, 
+            os.path.join(args.output_dir, 'chr_{norm_chrom}_scoreA.wig'.format(**locals())),
+            chrom, calculate_score_A)
+        count_wig_to_score_wig(count_file, 
+            os.path.join(args.output_dir, 'chr_{norm_chrom}_scoreB.wig'.format(**locals())), 
+            chrom, calculate_score_B)
+        count_wig_to_score_wig(count_file, 
+            os.path.join(args.output_dir, 'chr_{norm_chrom}_scoreC.wig'.format(**locals())), 
+            chrom, calculate_score_C)
+    
+    # Merge all of the data into an output .csv file that can be imported in Excel
+    logging.info('Merging output data into an Excel-importable file')
+    with open(os.path.join(args.output_dir, 'complete_output.csv'), 'w') as outfile:
+        outfile.write("Chrom,Position (0-based),5' end counts,3' end counts,total end counts,Score A,Score B,Score C\n")
+        for chrom in chroms:
+            norm_chrom = normalize_chrom(chrom)
+            logging.info('Adding data from chr {chrom}'.format(**locals()))
+            fiveprime_endcounts = WiggleReader(os.path.join(args.output_dir, 'chr_{norm_chrom}_5-prime_endcounts.wig'.format(**locals())))
+            threeprime_endcounts = WiggleReader(os.path.join(args.output_dir, 'chr_{norm_chrom}_3-prime_endcounts.wig'.format(**locals())))
+            total_endcounts = WiggleReader(os.path.join(args.output_dir, 'chr_{norm_chrom}_total_endcounts.wig'.format(**locals())))
+            scoreA = WiggleReader(os.path.join(args.output_dir, 'chr_{norm_chrom}_scoreA.wig'.format(**locals())))
+            scoreB = WiggleReader(os.path.join(args.output_dir, 'chr_{norm_chrom}_scoreB.wig'.format(**locals())))
+            scoreC = WiggleReader(os.path.join(args.output_dir, 'chr_{norm_chrom}_scoreC.wig'.format(**locals())))
+            for chrom, position, scores in iterate_concurrently([fiveprime_endcounts.iterate_wiggle(),
+                                                                 threeprime_endcounts.iterate_wiggle(),
+                                                                 total_endcounts.iterate_wiggle(),
+                                                                 scoreA.iterate_wiggle(),
+                                                                 scoreB.iterate_wiggle(),
+                                                                 scoreC.iterate_wiggle()]):
+                outfile.write('{chrom},{position},'.format(**locals()))
+                outfile.write(','.join(['{}'.format(score) for score in scores]))
+                outfile.write('\n')
+            
+if __name__ == '__main__':
+    main(parse_args())

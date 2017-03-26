@@ -13,8 +13,13 @@ Some tricky bits:
 import argparse
 import pysam
 import numpy as np
+from collections import Counter
 
 from ribomethseq import wiggle
+
+def normalize_chrom(chrom):
+    # Get rid of annoying characters that cause problems
+    return chrom.strip('|').replace('|', '-')
 
 
 def is_good_paired_read(read):
@@ -26,7 +31,7 @@ def is_good_paired_read(read):
                 not read.is_duplicate])
 
 def is_proper_pair(read):
-    return (read.is_read1 and not read.is_reverse) or (read.is_read2 and read.is_reverse):
+    return (read.is_read1 and not read.is_reverse) or (read.is_read2 and read.is_reverse)
 
 
 def get_read_coords(read):
@@ -39,7 +44,7 @@ def get_read_coords(read):
 
 
 def create_iterator(chrom, end_counter):
-    for position in range(max(end_counter.keys()) + 1):
+    for position in range(1, max(end_counter.keys()) + 1):
         yield chrom, position, end_counter[position]
 
 
