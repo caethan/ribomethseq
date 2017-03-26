@@ -9,7 +9,7 @@ setup(
     scripts=['bin/calculate-ribomethseq-from-bam', 'bin/bed-to-wig', 'bin/split-bed'],
     license='LICENSE',
     description='Implementation of the RiboMethSeq analysis algorithms',
-    requires=[
+    install_requires=[
         "numpy",
         "pysam",
     ],
