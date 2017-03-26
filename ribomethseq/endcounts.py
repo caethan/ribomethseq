@@ -72,9 +72,9 @@ def get_endcount_iterators(in_bam_file):
             
     iterators = {}
     for chrom in ends.keys():
-        iterators[chrom] = (
-            create_iterator(chrom, ends[chrom]['5-prime']),
-            create_iterator(chrom, ends[chrom]['3-prime']),
-            create_iterator(chrom, ends[chrom]['total'])
-        )
+        iterators[chrom] = {
+            '5-prime': create_iterator(chrom, ends[chrom]['5-prime']),
+            '3-prime': create_iterator(chrom, ends[chrom]['3-prime']),
+            'total': create_iterator(chrom, ends[chrom]['total'])
+        }
     return iterators

@@ -77,7 +77,7 @@ class WiggleWriter:
             self.outfile.write('{position}\t{score}\n'.format(**locals()))
         
 
-    def write_from_iterator(self, filename, iterator):
+    def write_from_iterator(self, iterator):
         self.write_header()
         for locus in iterator:
             if len(locus == 4):
