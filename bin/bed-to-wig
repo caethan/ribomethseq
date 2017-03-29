@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 """Transform a BedGraph with a single track into a wiggle file.
 """
 
