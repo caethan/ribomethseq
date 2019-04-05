@@ -2,7 +2,7 @@ from distutils.core import setup
 
 setup(
     name='RiboMethSeq',
-    version='0.1.0',
+    version='0.1.1',
     author='Brett N. Olsen',
     author_email='brett.olsen@gmail.com',
     packages=['ribomethseq'],

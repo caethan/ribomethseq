@@ -37,3 +37,9 @@ There will be a .wig file for each chromosome in the input data with:
 * scores A, B, and C, as described in the Birkedal paper
     
 These files are suitable for loading in to IGV, for example, while the .csv file is suitable for loading into Excel.
+
+## History
+
+0.1.1:  Added optional pseudocount argument
+
+0.1.0:  Initial Release

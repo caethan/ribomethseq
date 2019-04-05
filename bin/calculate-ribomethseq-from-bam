@@ -20,12 +20,15 @@ def parse_args():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument('--input-bam-file', required=True, help='Input BAM file of aligned paired reads')
     parser.add_argument('--output-dir', required=True, help='Output directory for output files')
+    parser.add_argument('--pseudocount', required=False, default=None, type=int,
+                        help='Optionally add a pseudocount when doing score calculations')
     
     args = parser.parse_args()
     if not args.input_bam_file.endswith('bam'):
         raise ValueError('Input file must be a BAM file, instead read {}'.format(args.input_bam_file))
     if not os.path.exists(args.input_bam_file):
         raise ValueError('Input file {} not found'.format(args.input_bam_file))
+    os.makedirs(args.output_dir)
     return args
     
     
@@ -70,13 +73,13 @@ def main(args):
         count_file = os.path.join(args.output_dir, 'chr_{norm_chrom}_total_endcounts.wig'.format(**locals()))
         count_wig_to_score_wig(count_file, 
             os.path.join(args.output_dir, 'chr_{norm_chrom}_scoreA.wig'.format(**locals())),
-            chrom, calculate_score_A)
+            chrom, calculate_score_A, pseudocount=args.pseudocount)
         count_wig_to_score_wig(count_file, 
             os.path.join(args.output_dir, 'chr_{norm_chrom}_scoreB.wig'.format(**locals())), 
-            chrom, calculate_score_B)
+            chrom, calculate_score_B, pseudocount=args.pseudocount)
         count_wig_to_score_wig(count_file, 
             os.path.join(args.output_dir, 'chr_{norm_chrom}_scoreC.wig'.format(**locals())), 
-            chrom, calculate_score_C)
+            chrom, calculate_score_C, pseudocount=args.pseudocount)
     
     # Merge all of the data into an output .csv file that can be imported in Excel
     logging.info('Merging output data into an Excel-importable file')
